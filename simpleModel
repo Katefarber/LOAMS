@@ -1,0 +1,164 @@
+import numpy as np
+from scipy.integrate import odeint
+import matplotlib.pyplot as plt
+
+# Define constants for the system
+
+# Aerobic parameters
+koa = 1e-4  # Michaelis-Menten constant for the acceptor in aerobic processes (mol/L)
+kod = 1e-3  # Michaelis-Menten constant for the electron donor in aerobic processes (mol/L)
+muMaxO = 50000.0 / 365.0  # Maximum specific growth rate in aerobic processes (mol/mol-bio/day)
+
+# Denitrification parameters
+kna = 1.0e-3  # Michaelis-Menten constant for the acceptor in denitrification (mol/L)
+knd = 1.0e-3  # Michaelis-Menten constant for the electron donor in denitrification (mol/L)
+kni = 1.0e-6  # Inhibition constant for O2 in denitrification (mol/L)
+muMaxDN = 20000.0 / 365.0  # Maximum specific growth rate in denitrification (mol/mol-bio/day)
+
+# Sulfate reduction parameters
+ksa = 1.25e-3  # Michaelis-Menten constant for sulfate (mol/L)
+ksd = 1.25e-3  # Michaelis-Menten constant for the electron donor in sulfate reduction (mol/L)
+ks02i = 1e-6  # Inhibition constant for oxygen in sulfate reduction (mol/L)
+ksno3i = 1e-3  # Inhibition constant for nitrate in sulfate reduction (mol/L)
+muMaxSR = 35000.0 / 365.0  # Maximum specific growth rate in sulfate reduction (mol/mol-bio/day)
+
+# Methanogenesis parameters
+kma = 1e-3  # Michaelis-Menten constant for methanogenic substrate, e.g., acetate (mol/L)
+#no kmd, see below (1)
+kmi = 1e-6  # Inhibition constant for methanogenesis, e.g., by sulfate (mol/L)
+muMaxMg = 10000.0 / 365.0  # Maximum specific growth rate of methanogens (mol/mol-bio/day)
+
+# Methanotrophy parameters
+kmtCH4 = 1e-3  # Michaelis-Menten constant for methane consumption by methanotrophs (mol/L)
+muMaxMT = 5000.0 / 365.0  # Maximum specific growth rate of methanotrophs (mol/mol-bio/day)
+
+# Hydrogenotrophic methanogenesis parameters
+kH2 = 1e-4  # Michaelis-Menten constant for hydrogen (mol/L)
+kCO2 = 1e-4  # Michaelis-Menten constant for carbon dioxide (mol/L)
+muMaxHMG = 5000.0 / 365.0  # Maximum specific growth rate of hydrogenotrophic methanogens (mol/mol-bio/day)
+kmhi = 1e-6  # Additional inhibition constant
+
+# Initial values
+# Aerobic
+acetate0 = 8e-3 # mol/L
+o20 = .28e-3  # mol/L
+AOB0 = 2.0E-6  # mol-bio/L
+
+# Denitrifying
+no30 = 1.0e-3  # mol/L
+n20 = 0.0  # mol/L
+NRB0 = 1.5e-6  # mol-bio/L
+
+# Sulfate
+so40 = 3.0e-3  # mol/L
+SRB0 = 1e-6  # mol-bio/L
+
+# Methanogenesis and Methanotrophy
+MB0 = 1e-6  # mol-bio/L (methanogenic biomass)
+CH40 = 0.0  # mol/L (methane)
+MTB0 = 1e-6  # mol-bio/L (methanotrophic biomass)
+
+# Hydrogenotrophic Methanogenesis
+HMG0 = 10*5e-7  # mol-bio/L (hydrogenotrophic methanogenic biomass)
+H20 = 1e-3  # mol/L (hydrogen)
+CO20 = 1e-3  # mol/L (carbon dioxide)
+
+# Total inorganic carbon
+dic0 = 0  # mol/L switched to zero for funsies
+hco30 = 0.0  # mol/L
+
+# Derivative function
+def derivative(X, t):
+    acetate, o2, aob, no3, n2, nrb, dic, so4, srb, mb, mtb, hmg, ch4, h2, co2 = X
+
+    # Aerobic processes
+    daerobic = 0.25 * muMaxO * aob * (acetate / (kod + acetate)) * (o2 / (koa + o2))
+    dAcetate = daerobic * -0.417
+    dO2 = daerobic * -0.5
+    dAob = 0.067 * daerobic
+    dhco3 = 0.5 * daerobic
+    ddic = dhco3
+
+    # Denitrifying processes
+    ddenitrification =  muMaxDN * nrb * (no3 / (kna + no3)) * (acetate / (knd + acetate)) * (kni / (kni + o2)) #times zero so no dinitrification occurs (was 0.5)
+    dNo3 = ddenitrification * -0.090
+    dAcetateN = ddenitrification * -0.125
+    dN2 = ddenitrification * 0.045
+    dNrb = ddenitrification * 0.0275
+    dhco3n = ddenitrification * 0.1125
+    ddic += dhco3n
+    dAcetate += dAcetateN
+
+    # Sulfate reduction process
+    dsulfate_reduction = muMaxSR * srb * (so4 / (ksa + so4)) * (acetate / (ksd + acetate)) * (ks02i / (ks02i + o2)) #* (ksno3i / (ksno3i + no3))
+    dSo4 = dsulfate_reduction * -0.125
+    dAcetateS = dsulfate_reduction * -0.13525
+    dSrb = dsulfate_reduction * 0.004375
+    dHco3s = dsulfate_reduction * 0.25
+    ddic += dHco3s
+    dAcetate += dAcetateS
+
+    # Methanogenesis process
+    dmethanogenesis = 0.1* muMaxMg * mb * (acetate / (kma + acetate))* (kmi / (kmi + so4)) * (ks02i / (ks02i + o2)) # (2) should we square acetate term?
+    dCH4 = dmethanogenesis
+    dMB = dmethanogenesis * 0.1 #- 1e-6
+    dAcetateMg = dmethanogenesis * -1.0
+    dHCO3Mg = dmethanogenesis * 1.0
+    ddic += dHCO3Mg
+    dAcetate += dAcetateMg
+
+    # Methanotrophy process
+    dmethanotrophy = 0.1* muMaxMT * mtb * (ch4 / (kmtCH4 + ch4)) *  (o2 / (koa + o2))
+    dMTB = dmethanotrophy * 0.1
+    dCH4 -= dmethanotrophy
+
+    # Hydrogenotrophic methanogenesis process
+    dhydrogenotrophic = 0.1*  muMaxHMG * hmg * (h2 / (kH2 + h2)) * (co2 / (kCO2 + co2)) * (kmi / (kmi + so4)) *(kmhi / (kmhi + no3)) #removing this term from inhibition
+    dH2 = dhydrogenotrophic * -4.0
+    dCO2 = dhydrogenotrophic * -1.0
+    dHMG = dhydrogenotrophic * 0.1
+    dCH4 += dhydrogenotrophic
+
+    return np.array([dAcetate, dO2, dAob, dNo3, dN2, dNrb, ddic, dSo4, dSrb, dMB, dMTB, dHMG, dCH4, dH2, dCO2])
+
+# Time parameters for integration
+Nt = 100000
+tmax = 80.
+t = np.linspace(0., tmax, Nt)
+
+# Initial conditions
+X0 = [acetate0, o20, AOB0, no30, n20, NRB0, dic0, so40, SRB0, MB0, MTB0, HMG0, CH40, H20, CO20]
+
+# Integrate the ODE system
+res = odeint(derivative, X0, t)
+
+# Extract and convert concentrations
+variables = res.T
+microbes = [variables[2], variables[5], variables[8], variables[9], variables[10], variables[11]]  # Microbial populations
+chemicals = [variables[0], variables[1], variables[3], variables[4], variables[6], variables[7], variables[12], variables[13], variables[14]]  # Chemical concentrations
+
+# Plotting microbes
+plt.figure(figsize=(6, 3))
+microbe_names = ["AOB", "NRB", "SRB", "MB", "MTB", "HMG"]
+for i, microbe in enumerate(microbes):
+  #if microbe_names[i] != "NRB":  # Skip DIC and nitrogen
+    plt.plot(t, microbe * 1e6, label=microbe_names[i])  # Convert to micromoles
+plt.yscale('log')
+plt.title("Microbe Population Graph")
+plt.xlabel("Time (days)")
+plt.ylabel("Population (micromoles)")
+plt.legend(title='Microorganism \nConcentrations', loc='center left', bbox_to_anchor=(1, 0.5))
+plt.show()
+
+# Plotting chemical concentrations
+plt.figure(figsize=(5, 4))
+chemical_names = ["Acetate", "O2", "NO3", "N2", "DIC", "SO4", "CH4", "H2", "CO2"]
+for i, chemical in enumerate(chemicals):
+  if chemical_names[i] not in ["DIC"]:  # Skip DIC and nitrogen "NO3", "N2",
+      plt.plot(t, chemical * 1e3, label=chemical_names[i])  # Convert to mmol/L
+plt.title("Chemical Concentrations graph")
+plt.xlabel("Time (days)")
+plt.ylabel("Concentration (mmol/L)")
+plt.legend(title='Chemical \nConcentrations', loc='center left', bbox_to_anchor=(1, 0.5))
+#plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.show()
