@@ -4,68 +4,62 @@ import matplotlib.pyplot as plt
 
 # Define constants for the system
 
-# Aerobic parameters
-koa = 1e-4  # Michaelis-Menten constant for the acceptor in aerobic processes (mol/L)
-kod = 1e-3  # Michaelis-Menten constant for the electron donor in aerobic processes (mol/L)
-muMaxO = 50000.0 / 365.0  # Maximum specific growth rate in aerobic processes (mol/mol-bio/day)
+# Constants for aerobic respiration
+koa = 1e-4  # Michaelis-Menten constant for oxygen (mol/L)
+kod = 1e-3  # Michaelis-Menten constant for the electron donor (mol/L)
+muMaxO = 50000.0 / 365.0  # Max specific growth rate (mol/mol-bio/day)
 
-# Denitrification parameters
-kna = 1.0e-3  # Michaelis-Menten constant for the acceptor in denitrification (mol/L)
-knd = 1.0e-3  # Michaelis-Menten constant for the electron donor in denitrification (mol/L)
-kni = 1.0e-6  # Inhibition constant for O2 in denitrification (mol/L)
-muMaxDN = 20000.0 / 365.0  # Maximum specific growth rate in denitrification (mol/mol-bio/day)
+# Constants for denitrification
+kna = 1.0e-3  # Michaelis-Menten constant for nitrate (mol/L)
+knd = 1.0e-3  # Michaelis-Menten constant for the electron donor (mol/L)
+kni = 1.0e-6  # Inhibition constant for oxygen (mol/L)
+muMaxDN = 20000.0 / 365.0  # Max specific growth rate (mol/mol-bio/day)
 
-# Sulfate reduction parameters
+# Constants for sulfate reduction
 ksa = 1.25e-3  # Michaelis-Menten constant for sulfate (mol/L)
-ksd = 1.25e-3  # Michaelis-Menten constant for the electron donor in sulfate reduction (mol/L)
-ks02i = 1e-6  # Inhibition constant for oxygen in sulfate reduction (mol/L)
-ksno3i = 1e-3  # Inhibition constant for nitrate in sulfate reduction (mol/L)
-muMaxSR = 35000.0 / 365.0  # Maximum specific growth rate in sulfate reduction (mol/mol-bio/day)
+ksd = 1.25e-3  # Michaelis-Menten constant for the electron donor (mol/L)
+ks02i = 1e-6   # Oxygen inhibition constant (mol/L)
+ksno3i = 1e-3  # Nitrate inhibition constant (mol/L)
+muMaxSR = 35000.0 / 365.0  # Max specific growth rate (mol/mol-bio/day)
 
-# Methanogenesis parameters
-kma = 1e-3  # Michaelis-Menten constant for methanogenic substrate, e.g., acetate (mol/L)
-#no kmd, see below (1)
-kmi = 1e-6  # Inhibition constant for methanogenesis, e.g., by sulfate (mol/L)
-muMaxMg = 10000.0 / 365.0  # Maximum specific growth rate of methanogens (mol/mol-bio/day)
+# Constants for methanogenesis
+kma = 1e-3  # Michaelis-Menten constant for methanogenic substrates, such as acetate (mol/L)
+kmi = 1e-6  # Inhibition constant for sulfate (mol/L)
+muMaxMg = 10000.0 / 365.0  # Max specific growth rate of methanogens (mol/mol-bio/day)
 
-# Methanotrophy parameters
-kmtCH4 = 1e-3  # Michaelis-Menten constant for methane consumption by methanotrophs (mol/L)
-muMaxMT = 5000.0 / 365.0  # Maximum specific growth rate of methanotrophs (mol/mol-bio/day)
+# Constants for methanotrophy
+kmtCH4 = 1e-3  # Michaelis-Menten constant for methane consumption (mol/L)
+muMaxMT = 5000.0 / 365.0  # Max specific growth rate of methanotrophs (mol/mol-bio/day)
 
-# Hydrogenotrophic methanogenesis parameters
-kH2 = 1e-4  # Michaelis-Menten constant for hydrogen (mol/L)
-kCO2 = 1e-4  # Michaelis-Menten constant for carbon dioxide (mol/L)
-muMaxHMG = 5000.0 / 365.0  # Maximum specific growth rate of hydrogenotrophic methanogens (mol/mol-bio/day)
-kmhi = 1e-6  # Additional inhibition constant
+# Constants for hydrogenotrophic methanogenesis
+kH2 = 1e-4    # Michaelis-Menten constant for hydrogen (mol/L)
+kCO2 = 1e-4   # Michaelis-Menten constant for carbon dioxide (mol/L)
+muMaxHMG = 5000.0 / 365.0  # Max specific growth rate (mol/mol-bio/day)
+kmhi = 1e-6   # Additional inhibition constant (mol/L)
 
-# Initial values
-# Aerobic
-acetate0 = 8e-3 # mol/L
-o20 = .28e-3  # mol/L
-AOB0 = 2.0E-6  # mol-bio/L
+# Initial concentrations of substrates and microbial biomass
+# Initial substrate concentrations reflect typical environmental levels (mol/L)
+acetate0 = 0.8e-2  # Initial acetate concentration
+o20 = .28e-3       # Initial oxygen concentration
+AOB0 = 2.0E-6      # Initial concentration of ammonia-oxidizing bacteria (mol-bio/L)
 
-# Denitrifying
-no30 = 1.0e-3  # mol/L
-n20 = 0.0  # mol/L
-NRB0 = 1.5e-6  # mol-bio/L
+no30 = 1.0e-3      # Initial nitrate concentration
+n20 = 0.0          # Initial nitrogen gas concentration
+NRB0 = 1.5e-6      # Initial concentration of nitrate-reducing bacteria (mol-bio/L)
 
-# Sulfate
-so40 = 3.0e-3  # mol/L
-SRB0 = 1e-6  # mol-bio/L
+so40 = 3.0e-3      # Initial sulfate concentration
+SRB0 = 1e-6        # Initial concentration of sulfate-reducing bacteria (mol-bio/L)
 
-# Methanogenesis and Methanotrophy
-MB0 = 1e-6  # mol-bio/L (methanogenic biomass)
-CH40 = 0.0  # mol/L (methane)
-MTB0 = 1e-6  # mol-bio/L (methanotrophic biomass)
+MB0 = 1e-6         # Initial concentration of methanogenic biomass (mol-bio/L)
+CH40 = 0.0         # Initial methane concentration
+MTB0 = 1e-6        # Initial concentration of methanotrophic bacteria (mol-bio/L)
 
-# Hydrogenotrophic Methanogenesis
-HMG0 = 10*5e-7  # mol-bio/L (hydrogenotrophic methanogenic biomass)
-H20 = 1e-3  # mol/L (hydrogen)
-CO20 = 1e-3  # mol/L (carbon dioxide)
+HMG0 = 10*5e-7     # Initial concentration of hydrogenotrophic methanogenic biomass (mol-bio/L)
+H20 = 1e-3         # Initial hydrogen concentration
+CO20 = 1e-3        # Initial carbon dioxide concentration
 
-# Total inorganic carbon
-dic0 = 0  # mol/L switched to zero for funsies
-hco30 = 0.0  # mol/L
+dic0 = 0           # Initial concentration of dissolved inorganic carbon (DIC) (mol/L)
+hco30 = 0.0        # Initial bicarbonate concentration (mol/L)
 
 # Derivative function
 def derivative(X, t):
@@ -101,7 +95,7 @@ def derivative(X, t):
     # Methanogenesis process
     dmethanogenesis = 0.1* muMaxMg * mb * (acetate / (kma + acetate))* (kmi / (kmi + so4)) * (ks02i / (ks02i + o2)) # (2) should we square acetate term?
     dCH4 = dmethanogenesis
-    dMB = dmethanogenesis * 0.1 #- 1e-6
+    dMB = dmethanogenesis * 0.1
     dAcetateMg = dmethanogenesis * -1.0
     dHCO3Mg = dmethanogenesis * 1.0
     ddic += dHCO3Mg
@@ -138,27 +132,27 @@ microbes = [variables[2], variables[5], variables[8], variables[9], variables[10
 chemicals = [variables[0], variables[1], variables[3], variables[4], variables[6], variables[7], variables[12], variables[13], variables[14]]  # Chemical concentrations
 
 # Plotting microbes
-plt.figure(figsize=(6, 3))
+plt.figure(figsize=(10, 6))
 microbe_names = ["AOB", "NRB", "SRB", "MB", "MTB", "HMG"]
 for i, microbe in enumerate(microbes):
-  #if microbe_names[i] != "NRB":  # Skip DIC and nitrogen
+  if microbe_names[i] != "NRB":  # Skip DIC and nitrogen
     plt.plot(t, microbe * 1e6, label=microbe_names[i])  # Convert to micromoles
 plt.yscale('log')
-plt.title("Microbe Population Graph")
+plt.title("Microbial Populations Over Time (Log Scale)")
 plt.xlabel("Time (days)")
 plt.ylabel("Population (micromoles)")
-plt.legend(title='Microorganism \nConcentrations', loc='center left', bbox_to_anchor=(1, 0.5))
+plt.legend()
 plt.show()
 
 # Plotting chemical concentrations
-plt.figure(figsize=(5, 4))
+plt.figure(figsize=(5, 3))
 chemical_names = ["Acetate", "O2", "NO3", "N2", "DIC", "SO4", "CH4", "H2", "CO2"]
 for i, chemical in enumerate(chemicals):
-  if chemical_names[i] not in ["DIC"]:  # Skip DIC and nitrogen "NO3", "N2",
+  if chemical_names[i] not in ["DIC", "CO2", "H2"]:  # Skip DIC and nitrogen "NO3", "N2",
       plt.plot(t, chemical * 1e3, label=chemical_names[i])  # Convert to mmol/L
-plt.title("Chemical Concentrations graph")
+plt.title("Chemical Concentrations Over Time")
 plt.xlabel("Time (days)")
 plt.ylabel("Concentration (mmol/L)")
-plt.legend(title='Chemical \nConcentrations', loc='center left', bbox_to_anchor=(1, 0.5))
-#plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+#plt.legend()
 plt.show()
